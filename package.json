@@ -1,0 +1,28 @@
+{
+    "name": "notifications-microservice",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Microservicio de notificaciones para Roomiefy",
+    "main": "src/app.js",
+    "scripts": {
+        "start": "node src/app.js",
+        "dev": "node --watch src/app.js"
+    },
+    "keywords": [
+        "notifications",
+        "microservice",
+        "rabbitmq"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "amqplib": "^0.10.9",
+        "express": "^4.18.2",
+        "mongoose": "^8.19.2",
+        "dotenv": "^16.4.5",
+        "cors": "^2.8.5"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.3"
+    }
+}
