@@ -18,9 +18,9 @@ app.use(express.json());
 
 // Middleware de logging para debugging (después de express.json para tener el body parseado)
 app.use((req, res, next) => {
-    console.log(`\n📨 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`\n ${new Date().toISOString()} - ${req.method} ${req.path}`);
     if (req.body && Object.keys(req.body).length > 0) {
-        console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
+        console.log(' Request body:', JSON.stringify(req.body, null, 2));
     }
     next();
 });
@@ -39,7 +39,7 @@ app.use('/api/notifications', notificationRoutes);
 
 const startService = async () => {
     try {
-        console.log('🔔 Starting Notification Microservice...');
+        console.log(' Starting Notification Microservice...');
 
         // 1. Conectar a MongoDB
         await connectDatabase();
@@ -49,13 +49,13 @@ const startService = async () => {
 
         // 3. Iniciar servidor Express
         app.listen(PORT, () => {
-            console.log(`✅ Notification Microservice ready on port ${PORT}`);
-            console.log(`📡 Health check: http://localhost:${PORT}/health`);
-            console.log(`📬 API: http://localhost:${PORT}/api/notifications`);
+            console.log(` Notification Microservice ready on port ${PORT}`);
+            console.log(` Health check: http://localhost:${PORT}/health`);
+            console.log(` API: http://localhost:${PORT}/api/notifications`);
         });
 
     } catch (error) {
-        console.error('❌ Failed to start Notification Microservice:', error);
+        console.error(' Failed to start Notification Microservice:', error);
         process.exit(1);
     }
 };

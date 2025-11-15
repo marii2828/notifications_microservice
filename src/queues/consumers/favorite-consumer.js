@@ -11,29 +11,33 @@ class FavoriteConsumer {
 
     async start() {
         try {
+            console.log(' [FavoriteConsumer] Iniciando consumer...');
             this.channel = await getRabbitMQChannel();
 
-            // Asegurar que la cola existe y es durable
             await this.channel.assertQueue(this.queueName, {
                 durable: true
             });
+            console.log(` [FavoriteConsumer] Cola "${this.queueName}" verificada/creada`);
 
-            // Configurar prefetch para procesar mensajes uno a la vez
             await this.channel.prefetch(1);
 
-            console.log('🎯 Favorite Consumer waiting for messages...');
+            console.log(' [FavoriteConsumer] Favorite Consumer waiting for messages on queue:', this.queueName);
 
             this.channel.consume(this.queueName, async (msg) => {
                 if (msg !== null) {
+                    console.log(' [FavoriteConsumer] Nuevo mensaje recibido de la cola');
                     await this.processMessage(msg);
+                } else {
+                    console.log(' [FavoriteConsumer] Mensaje null recibido');
                 }
             }, {
-                noAck: false // Acknowledge manual
+                noAck: false 
             });
+            
+            console.log(' [FavoriteConsumer] Consumer iniciado y escuchando mensajes');
 
         } catch (error) {
-            console.error('❌ Favorite Consumer failed to start:', error);
-            // Intentar reiniciar después de un delay
+            console.error(' Favorite Consumer failed to start:', error);
             setTimeout(() => this.start(), 5000);
         }
     }
@@ -43,23 +47,22 @@ class FavoriteConsumer {
             const messageContent = msg.content.toString();
             const message = JSON.parse(messageContent);
 
-            console.log(`📨 Received favorite notification: ${message.type}`);
+            console.log(` [FavoriteConsumer] Received favorite notification: ${message.type}`);
+            console.log(` [FavoriteConsumer] Message data:`, JSON.stringify(message.data, null, 2));
 
             if (message.type === 'PROPERTY_FAVORITED') {
+                console.log(' [FavoriteConsumer] Processing favorite notification...');
                 await NotificationService.handlePropertyFavorited(message.data);
                 this.channel.ack(msg);
-                console.log('✅ Favorite notification processed and acknowledged');
+                console.log(' [FavoriteConsumer] Favorite notification processed and acknowledged');
             } else {
-                console.warn(`⚠️ Unknown message type: ${message.type}`);
-                this.channel.ack(msg); // Acknowledge para no procesar infinitamente
+                console.warn(` [FavoriteConsumer] Unknown message type: ${message.type}`);
+                this.channel.ack(msg); 
             }
         } catch (error) {
-            console.error('❌ Error processing favorite notification:', error);
-            console.error('Message content:', msg.content.toString());
-
-            // Reintentar el mensaje o enviarlo a una cola de dead letters
-            // Por ahora, rechazamos el mensaje sin reencolar para evitar loops infinitos
-            // En producción, deberías tener una cola de dead letters
+            console.error(' [FavoriteConsumer] Error processing favorite notification:', error);
+            console.error(' [FavoriteConsumer] Error stack:', error.stack);
+            console.error(' [FavoriteConsumer] Message content:', msg.content.toString());
             this.channel.nack(msg, false, false);
         }
     }

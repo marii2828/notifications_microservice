@@ -28,17 +28,29 @@ const notificationSchema = new mongoose.Schema({
     read: {
         type: Boolean,
         default: false,
-        index: true
+        index: true,
+        required: true
     },
     readAt: {
-        type: Date
+        type: Date,
+        default: null
+    },
+    visited: {
+        type: Boolean,
+        default: false,
+        index: true
+    },
+    visitedAt: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true
 });
 
-// Índice compuesto para consultas comunes
 notificationSchema.index({ userId: 1, read: 1, createdAt: -1 });
+notificationSchema.index({ userId: 1, visited: 1, createdAt: -1 });
+notificationSchema.index({ userId: 1, read: 1, visited: 1, createdAt: -1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

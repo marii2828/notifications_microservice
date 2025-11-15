@@ -17,31 +17,31 @@ const connect = async () => {
         connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
 
-        console.log('✅ RabbitMQ connected successfully');
+        console.log(' RabbitMQ connected successfully');
         reconnectAttempts = 0;
 
         // Manejar cierre de conexión
         connection.on('close', () => {
-            console.warn('⚠️ RabbitMQ connection closed. Attempting to reconnect...');
+            console.warn(' RabbitMQ connection closed. Attempting to reconnect...');
             channel = null;
             connection = null;
             reconnect();
         });
 
         connection.on('error', (err) => {
-            console.error('❌ RabbitMQ connection error:', err);
+            console.error(' RabbitMQ connection error:', err);
         });
 
         return { connection, channel };
     } catch (error) {
-        console.error('❌ Failed to connect to RabbitMQ:', error.message);
+        console.error(' Failed to connect to RabbitMQ:', error.message);
 
         reconnectAttempts++;
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            console.log(`🔄 Retrying connection (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${RECONNECT_DELAY / 1000}s...`);
+            console.log(` Retrying connection (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) in ${RECONNECT_DELAY / 1000}s...`);
             setTimeout(reconnect, RECONNECT_DELAY);
         } else {
-            console.error('❌ Max reconnection attempts reached. Exiting...');
+            console.error(' Max reconnection attempts reached. Exiting...');
             process.exit(1);
         }
         throw error;
@@ -54,18 +54,18 @@ const reconnect = async () => {
     }
 
     if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        console.error('❌ Max reconnection attempts reached. Exiting...');
+        console.error(' Max reconnection attempts reached. Exiting...');
         process.exit(1);
         return;
     }
 
     reconnectAttempts++;
-    console.log(`🔄 Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}...`);
+    console.log(` Reconnection attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}...`);
 
     try {
         await connect();
     } catch (error) {
-        console.error(`❌ Reconnection attempt ${reconnectAttempts} failed:`, error.message);
+        console.error(` Reconnection attempt ${reconnectAttempts} failed:`, error.message);
         setTimeout(reconnect, RECONNECT_DELAY);
     }
 };
@@ -95,9 +95,9 @@ export const closeConnections = async () => {
             await connection.close();
             connection = null;
         }
-        console.log('✅ RabbitMQ connections closed');
+        console.log(' RabbitMQ connections closed');
     } catch (error) {
-        console.error('❌ Error closing RabbitMQ connections:', error);
+        console.error(' Error closing RabbitMQ connections:', error);
     }
 };
 

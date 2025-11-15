@@ -10,18 +10,18 @@ const connectDatabase = async () => {
     try {
         await mongoose.connect(MONGODB_URI);
 
-        console.log('✅ MongoDB connected successfully');
+        console.log(' MongoDB connected successfully');
 
         mongoose.connection.on('error', (err) => {
-            console.error('❌ MongoDB connection error:', err);
+            console.error(' MongoDB connection error:', err);
         });
 
         mongoose.connection.on('disconnected', () => {
-            console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+            console.warn(' MongoDB disconnected. Attempting to reconnect...');
         });
 
     } catch (error) {
-        console.error('❌ Failed to connect to MongoDB:', error);
+        console.error(' Failed to connect to MongoDB:', error);
         process.exit(1);
     }
 };

@@ -5,27 +5,24 @@ import { getRabbitMQChannel } from '../config/rabbitmq.js';
 
 const router = express.Router();
 
-// POST /api/notifications/favorite - Endpoint para crear notificación de favorito desde el frontend
 router.post('/favorite', async (req, res) => {
     try {
-        console.log('📨 POST /api/notifications/favorite recibido');
-        console.log('📦 Body recibido:', JSON.stringify(req.body, null, 2));
+        console.log(' POST /api/notifications/favorite recibido');
+        console.log(' Body recibido:', JSON.stringify(req.body, null, 2));
 
         const favoriteData = req.body;
 
-        // Validar solo los campos absolutamente necesarios
         const criticalFields = ['propertyId', 'propertyTitle', 'favoritedBy', 'favoritedByEmail'];
         const missingCriticalFields = criticalFields.filter(field => !favoriteData[field]);
 
         if (missingCriticalFields.length > 0) {
-            console.error('❌ Campos críticos faltantes:', missingCriticalFields);
+            console.error(' Campos críticos faltantes:', missingCriticalFields);
             return res.status(400).json({
                 success: false,
                 error: `Missing required fields: ${missingCriticalFields.join(', ')}`
             });
         }
 
-        // Normalizar datos - usar valores por defecto si faltan datos del propietario
         const normalizedData = {
             ...favoriteData,
             propertyOwnerId: favoriteData.propertyOwnerId || 'unknown',
@@ -34,7 +31,7 @@ router.post('/favorite', async (req, res) => {
 
         console.log('✅ Datos normalizados:', normalizedData);
 
-        // Enviar mensaje a RabbitMQ (igual que lo haría el producer)
+        // Enviar mensaje a RabbitMQ 
         try {
             const channel = await getRabbitMQChannel();
 
@@ -43,6 +40,8 @@ router.post('/favorite', async (req, res) => {
                 data: normalizedData,
                 timestamp: new Date().toISOString()
             };
+
+            console.log(' [Route] Enviando mensaje a RabbitMQ:', JSON.stringify(message, null, 2));
 
             const sent = channel.sendToQueue(
                 'favorite_notifications',
@@ -53,17 +52,18 @@ router.post('/favorite', async (req, res) => {
             );
 
             if (sent) {
-                console.log('✅ Favorite notification sent to queue from frontend:', normalizedData.propertyId);
+                console.log(' [Route] Favorite notification sent to queue from frontend:', normalizedData.propertyId);
+                console.log(' [Route] Message queued successfully, waiting for consumer to process...');
             } else {
-                console.warn('⚠️ Queue is full, message may be lost');
+                console.warn(' [Route] Queue is full, message may be lost');
             }
         } catch (rabbitError) {
-            console.error('❌ Error sending to RabbitMQ:', rabbitError);
-            console.error('RabbitMQ error details:', rabbitError.message);
-            // Continuamos aunque falle RabbitMQ - el consumer lo procesará cuando esté disponible
+            console.error(' [Route] Error sending to RabbitMQ:', rabbitError);
+            console.error(' [Route] RabbitMQ error details:', rabbitError.message);
+            console.error(' [Route] RabbitMQ error stack:', rabbitError.stack);
         }
 
-        console.log('✅ Notificación procesada exitosamente');
+        console.log(' Notificación procesada exitosamente');
         res.json({
             success: true,
             message: 'Favorite notification queued successfully'
@@ -77,7 +77,7 @@ router.post('/favorite', async (req, res) => {
     }
 });
 
-// GET /api/notifications/:userId - Obtener notificaciones de un usuario
+//Ontener las notificaciones de un usuario 
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -110,7 +110,6 @@ router.get('/:userId', async (req, res) => {
     }
 });
 
-// GET /api/notifications/:userId/unread - Obtener conteo de no leídas
 router.get('/:userId/unread/count', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -134,13 +133,18 @@ router.get('/:userId/unread/count', async (req, res) => {
     }
 });
 
-// PATCH /api/notifications/:notificationId/read - Marcar como leída
 router.patch('/:notificationId/read', async (req, res) => {
     try {
         const { notificationId } = req.params;
         const { userId } = req.body;
 
+        console.log(' [Route] PATCH /api/notifications/:notificationId/read');
+        console.log(' [Route] notificationId:', notificationId);
+        console.log(' [Route] userId:', userId);
+        console.log(' [Route] Body completo:', JSON.stringify(req.body, null, 2));
+
         if (!userId) {
+            console.error(' [Route] userId faltante en el body');
             return res.status(400).json({
                 success: false,
                 error: 'userId is required in request body'
@@ -149,12 +153,22 @@ router.patch('/:notificationId/read', async (req, res) => {
 
         const notification = await NotificationService.markAsRead(notificationId, userId);
 
+        if (!notification) {
+            console.error(' [Route] Notificación no encontrada o acceso denegado');
+            return res.status(404).json({
+                success: false,
+                error: 'Notification not found or access denied'
+            });
+        }
+
+        console.log(' [Route] Notificación marcada como leída exitosamente:', notification._id);
         res.json({
             success: true,
             data: notification
         });
     } catch (error) {
-        console.error('Error marking notification as read:', error);
+        console.error(' [Route] Error marking notification as read:', error);
+        console.error(' [Route] Error stack:', error.stack);
         res.status(error.message.includes('not found') ? 404 : 500).json({
             success: false,
             error: error.message || 'Error marking notification as read'
@@ -162,7 +176,6 @@ router.patch('/:notificationId/read', async (req, res) => {
     }
 });
 
-// PATCH /api/notifications/:userId/read-all - Marcar todas como leídas
 router.patch('/:userId/read-all', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -182,7 +195,6 @@ router.patch('/:userId/read-all', async (req, res) => {
     }
 });
 
-// DELETE /api/notifications/:notificationId - Eliminar notificación
 router.delete('/:notificationId', async (req, res) => {
     try {
         const { notificationId } = req.params;
