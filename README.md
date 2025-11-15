@@ -2,7 +2,7 @@
 
 Microservicio dedicado a gestionar notificaciones de la plataforma Roomiefy usando RabbitMQ como mensajería y MongoDB para persistencia.
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 ```
 roomiefy-api (Producer)
@@ -12,14 +12,14 @@ notifications-microservice (Consumer)
 MongoDB (Persistencia) + Email/Push Services
 ```
 
-## 📋 Requisitos Previos
+## Requisitos Previos
 
 - Node.js >= 18
 - Docker y Docker Compose (para servicios de infraestructura)
 - MongoDB
 - RabbitMQ
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### 1. Instalar dependencias
 
@@ -172,14 +172,4 @@ Para verificar que todo funciona:
 - Verifica que la cola existe en RabbitMQ Management UI
 - Revisa los logs del microservicio
 - Asegúrate de que el producer esté enviando a la cola correcta: `favorite_notifications`
-
-## 📝 Próximos Pasos
-
-- [ ] Implementar cola de dead letters para mensajes fallidos
-- [ ] Agregar más tipos de notificaciones
-- [ ] Integrar servicio de email real (SendGrid, AWS SES)
-- [ ] Integrar servicio de push notifications (Firebase, OneSignal)
-- [ ] Agregar tests unitarios e integración
-- [ ] Implementar rate limiting en la API
-- [ ] Agregar autenticación/autorización en endpoints
 
