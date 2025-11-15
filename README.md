@@ -183,4 +183,3 @@ Para verificar que todo funciona:
 - [ ] Implementar rate limiting en la API
 - [ ] Agregar autenticación/autorización en endpoints
 
-
