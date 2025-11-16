@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import connectDatabase from './config/database.js';
 import QueueManager from './queues/queue-manager.js';
 import notificationRoutes from './routes/notifications.js';
-import { closeConnections, isRabbitMQConnected } from './config/rabbitmq.js';
+import { closeConnections } from './config/rabbitmq.js';
 
 dotenv.config();
 
@@ -33,11 +33,11 @@ app.get('/health', (req, res) => {
         service: 'notifications-microservice',
         timestamp: new Date().toISOString(),
         mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        rabbitmq: isRabbitMQConnected() ? 'connected' : 'disconnected'
+        environment: process.env.NODE_ENV || 'development'
     });
 });
 
-// Diagnostic endpoint
+// Diagnostic endpoint - Muestra información detallada para debugging
 app.get('/diagnostic', (req, res) => {
     const diagnostics = {
         service: 'notifications-microservice',
@@ -45,7 +45,8 @@ app.get('/diagnostic', (req, res) => {
         environment: {
             node_version: process.version,
             port: process.env.PORT || 'not set',
-            node_env: process.env.NODE_ENV || 'not set'
+            node_env: process.env.NODE_ENV || 'not set',
+            platform: process.platform
         },
         mongodb: {
             status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
@@ -55,7 +56,6 @@ app.get('/diagnostic', (req, res) => {
             has_mongodb_uri: !!process.env.MONGODB_URI
         },
         rabbitmq: {
-            connected: isRabbitMQConnected(),
             has_rabbitmq_url: !!process.env.RABBITMQ_URL,
             url_configured: process.env.RABBITMQ_URL ? 'yes' : 'no',
             url_preview: process.env.RABBITMQ_URL 
@@ -77,42 +77,52 @@ app.use('/api/notifications', notificationRoutes);
 
 const startService = async () => {
     try {
+        console.log('========================================');
         console.log(' Starting Notification Microservice...');
+        console.log('========================================');
         console.log(' Environment variables check:');
         console.log(`  - MONGODB_URI: ${process.env.MONGODB_URI ? '✓ SET' : '✗ NOT SET'}`);
         console.log(`  - RABBITMQ_URL: ${process.env.RABBITMQ_URL ? '✓ SET' : '✗ NOT SET'}`);
         console.log(`  - PORT: ${process.env.PORT || '3001 (default)'}`);
         console.log(`  - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+        console.log('========================================\n');
 
         // 1. Conectar a MongoDB
-        console.log('\n[1/3] Connecting to MongoDB...');
+        console.log('[1/3] Connecting to MongoDB...');
         await connectDatabase();
-        console.log('✓ MongoDB connected');
+        console.log('✓ MongoDB connected successfully\n');
 
-        // 2. Iniciar todos los consumers (no crítico si falla, el servicio puede seguir)
-        console.log('\n[2/3] Starting RabbitMQ consumers...');
+        // 2. Iniciar todos los consumers (NO crítico - el servicio puede continuar)
+        console.log('[2/3] Starting RabbitMQ consumers...');
         try {
             await QueueManager.startAllConsumers();
-            console.log('✓ RabbitMQ consumers started');
+            console.log('✓ RabbitMQ consumers started successfully\n');
         } catch (rabbitmqError) {
-            console.error('⚠ WARNING: Failed to start RabbitMQ consumers:', rabbitmqError.message);
-            console.error('⚠ The service will continue but notifications will NOT be processed until RabbitMQ is available');
-            console.error('⚠ Check RABBITMQ_URL environment variable and RabbitMQ service availability');
+            console.error('⚠ WARNING: Failed to start RabbitMQ consumers');
+            console.error('⚠ Error:', rabbitmqError.message);
+            console.error('⚠ The service will continue but notifications will NOT be processed');
+            console.error('⚠ Check RABBITMQ_URL environment variable and RabbitMQ availability');
+            console.error('⚠ In Azure, RabbitMQ is not available by default - use RabbitMQ Cloud or make service resilient\n');
         }
 
         // 3. Iniciar servidor Express
-        console.log('\n[3/3] Starting Express server...');
+        console.log('[3/3] Starting Express server...');
+        // Azure requiere escuchar en 0.0.0.0, no solo localhost
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`\n✓ Notification Microservice ready on port ${PORT}`);
-            console.log(`  Health check: http://localhost:${PORT}/health`);
+            console.log('\n========================================');
+            console.log('✓ Notification Microservice READY');
+            console.log('========================================');
+            console.log(`  Port: ${PORT}`);
+            console.log(`  Health: http://localhost:${PORT}/health`);
             console.log(`  Diagnostic: http://localhost:${PORT}/diagnostic`);
             console.log(`  API: http://localhost:${PORT}/api/notifications`);
+            console.log('========================================\n');
         });
 
     } catch (error) {
-        console.error('\n✗ Failed to start Notification Microservice:', error);
-        console.error('Error details:', error.message);
-        console.error('Stack trace:', error.stack);
+        console.error('\n✗ Failed to start Notification Microservice');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
         process.exit(1);
     }
 };
