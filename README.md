@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Microservicio de Notificaciones - Roomiefy
 
 Microservicio dedicado a gestionar notificaciones de la plataforma Roomiefy usando RabbitMQ como mensajería y MongoDB para persistencia.
@@ -182,4 +183,8 @@ Para verificar que todo funciona:
 - [ ] Agregar tests unitarios e integración
 - [ ] Implementar rate limiting en la API
 - [ ] Agregar autenticación/autorización en endpoints
+
+=======
+# notifications_microservice
+>>>>>>> 1e8f71176cebe6b93c13023312c5c1f66c8e47f7
 
