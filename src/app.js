@@ -13,11 +13,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Middleware de logging para debugging (después de express.json para tener el body parseado)
 app.use((req, res, next) => {
     console.log(`\n ${new Date().toISOString()} - ${req.method} ${req.path}`);
     if (req.body && Object.keys(req.body).length > 0) {
@@ -26,7 +24,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
@@ -37,7 +34,6 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Diagnostic endpoint - Muestra información detallada para debugging
 app.get('/diagnostic', (req, res) => {
     const diagnostics = {
         service: 'notifications-microservice',
@@ -92,7 +88,7 @@ const startService = async () => {
         await connectDatabase();
         console.log('>>> STEP 1/3: MONGODB connection completed\n');
 
-        // 2. Iniciar todos los consumers (NO crítico - el servicio puede continuar)
+        // 2. Iniciar todos los consumers 
         console.log('>>> STEP 2/3: Starting RABBITMQ consumers <<<');
         try {
             await QueueManager.startAllConsumers();

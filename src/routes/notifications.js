@@ -30,7 +30,7 @@ router.post('/favorite', async (req, res) => {
             propertyOwnerEmail: favoriteData.propertyOwnerEmail || 'no-email@example.com'
         };
 
-        console.log('✅ Datos normalizados:', normalizedData);
+        console.log(' Datos normalizados:', normalizedData);
 
         // Enviar mensaje a RabbitMQ 
         try {
