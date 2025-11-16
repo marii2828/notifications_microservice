@@ -16,14 +16,19 @@ const connect = async () => {
     try {
         // Log de información de conexión (sin mostrar password)
         const urlPreview = RABBITMQ_URL.replace(/:[^:@]+@/, ':****@');
-        console.log('[RabbitMQ] Attempting to connect to RabbitMQ...');
-        console.log(`[RabbitMQ] Connection URL: ${urlPreview}`);
+        console.log('========================================');
+        console.log('>>> RABBITMQ: Starting connection...');
+        console.log('========================================');
+        console.log(`>>> RABBITMQ Connection URL: ${urlPreview}`);
 
         connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
 
-        console.log('[RabbitMQ] ✓✓✓ RabbitMQ CONNECTED SUCCESSFULLY ✓✓✓');
-        console.log(`[RabbitMQ] Connection established to: ${urlPreview}`);
+        console.log('========================================');
+        console.log('>>> RABBITMQ: CONNECTED SUCCESSFULLY! <<<');
+        console.log('========================================');
+        console.log(`>>> RABBITMQ Connection established to: ${urlPreview}`);
+        console.log('========================================');
         reconnectAttempts = 0;
 
         // Manejar cierre de conexión

@@ -88,17 +88,15 @@ const startService = async () => {
         console.log('========================================\n');
 
         // 1. Conectar a MongoDB
-        console.log('[1/3] Connecting to MongoDB...');
+        console.log('\n>>> STEP 1/3: Connecting to MONGODB <<<');
         await connectDatabase();
-        // El mensaje de conexión exitosa ya se muestra en connectDatabase()
-        console.log('');
+        console.log('>>> STEP 1/3: MONGODB connection completed\n');
 
         // 2. Iniciar todos los consumers (NO crítico - el servicio puede continuar)
-        console.log('[2/3] Starting RabbitMQ consumers...');
+        console.log('>>> STEP 2/3: Starting RABBITMQ consumers <<<');
         try {
             await QueueManager.startAllConsumers();
-            // Los mensajes de conexión exitosa ya se muestran en los módulos
-            console.log('');
+            console.log('>>> STEP 2/3: RABBITMQ consumers started\n');
         } catch (rabbitmqError) {
             console.error('[App] ⚠ WARNING: Failed to start RabbitMQ consumers');
             console.error('[App] Error:', rabbitmqError.message);
