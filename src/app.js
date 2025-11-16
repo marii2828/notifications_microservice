@@ -16,11 +16,16 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Middleware de logging mejorado para Azure
 app.use((req, res, next) => {
-    console.log(`\n ${new Date().toISOString()} - ${req.method} ${req.path}`);
+    const timestamp = new Date().toISOString();
+    console.log(`\n========================================`);
+    console.log(`[${timestamp}] ${req.method} ${req.path}`);
+    console.log(`[${timestamp}] Headers:`, JSON.stringify(req.headers, null, 2));
     if (req.body && Object.keys(req.body).length > 0) {
-        console.log(' Request body:', JSON.stringify(req.body, null, 2));
+        console.log(`[${timestamp}] Request body:`, JSON.stringify(req.body, null, 2));
     }
+    console.log(`========================================\n`);
     next();
 });
 
@@ -54,7 +59,7 @@ app.get('/diagnostic', (req, res) => {
         rabbitmq: {
             has_rabbitmq_url: !!process.env.RABBITMQ_URL,
             url_configured: process.env.RABBITMQ_URL ? 'yes' : 'no',
-            url_preview: process.env.RABBITMQ_URL 
+            url_preview: process.env.RABBITMQ_URL
                 ? process.env.RABBITMQ_URL.replace(/:[^:@]+@/, ':****@') // Ocultar password
                 : 'not set'
         },
@@ -64,12 +69,62 @@ app.get('/diagnostic', (req, res) => {
             port_set: !!process.env.PORT
         }
     };
-    
+
     res.json(diagnostics);
 });
 
 // API Routes
 app.use('/api/notifications', notificationRoutes);
+
+// Debug endpoint - muestra las rutas registradas
+app.get('/routes', (req, res) => {
+    const routes = [];
+    app._router.stack.forEach((middleware) => {
+        if (middleware.route) {
+            routes.push({
+                method: Object.keys(middleware.route.methods)[0].toUpperCase(),
+                path: middleware.route.path
+            });
+        } else if (middleware.name === 'router') {
+            middleware.handle.stack.forEach((handler) => {
+                if (handler.route) {
+                    routes.push({
+                        method: Object.keys(handler.route.methods)[0].toUpperCase(),
+                        path: '/api/notifications' + handler.route.path
+                    });
+                }
+            });
+        }
+    });
+    res.json({
+        service: 'notifications-microservice',
+        routes: routes,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Manejo de rutas no encontradas - mejor logging
+app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    console.error(`\n❌❌❌ RUTA NO ENCONTRADA ❌❌❌`);
+    console.error(`[${timestamp}] Method: ${req.method}`);
+    console.error(`[${timestamp}] Path: ${req.path}`);
+    console.error(`[${timestamp}] Original URL: ${req.originalUrl}`);
+    console.error(`[${timestamp}] Headers:`, JSON.stringify(req.headers, null, 2));
+    console.error(`[${timestamp}] Query params:`, JSON.stringify(req.query, null, 2));
+    console.error(`[${timestamp}] Body:`, JSON.stringify(req.body, null, 2));
+    console.error(`❌❌❌ FIN ERROR 404 ❌❌❌\n`);
+
+    res.status(404).json({
+        timestamp: timestamp,
+        status: 404,
+        error: 'Not Found',
+        path: req.path,
+        method: req.method,
+        originalUrl: req.originalUrl,
+        message: `La ruta ${req.method} ${req.path} no existe en este microservicio`
+    });
+});
 
 const startService = async () => {
     try {
