@@ -5,6 +5,7 @@ import { getRabbitMQChannel } from '../config/rabbitmq.js';
 
 const router = express.Router();
 
+// POST /api/notifications/favorite
 router.post('/favorite', async (req, res) => {
     try {
         console.log(' POST /api/notifications/favorite recibido');
@@ -77,39 +78,7 @@ router.post('/favorite', async (req, res) => {
     }
 });
 
-//Ontener las notificaciones de un usuario 
-router.get('/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { limit = 50, skip = 0, read } = req.query;
-
-        const options = {
-            limit: parseInt(limit),
-            skip: parseInt(skip),
-            read: read === 'true' ? true : read === 'false' ? false : null
-        };
-
-        const result = await NotificationService.getNotificationsByUserId(userId, options);
-
-        res.json({
-            success: true,
-            data: result.notifications,
-            meta: {
-                total: result.total,
-                hasMore: result.hasMore,
-                limit: options.limit,
-                skip: options.skip
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching notifications:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Error fetching notifications'
-        });
-    }
-});
-
+// GET /api/notifications/:userId/unread/count (más específica - debe ir antes de /:userId)
 router.get('/:userId/unread/count', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -133,6 +102,7 @@ router.get('/:userId/unread/count', async (req, res) => {
     }
 });
 
+// PATCH /api/notifications/:notificationId/read
 router.patch('/:notificationId/read', async (req, res) => {
     try {
         const { notificationId } = req.params;
@@ -176,6 +146,7 @@ router.patch('/:notificationId/read', async (req, res) => {
     }
 });
 
+// PATCH /api/notifications/:userId/read-all
 router.patch('/:userId/read-all', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -195,6 +166,7 @@ router.patch('/:userId/read-all', async (req, res) => {
     }
 });
 
+// DELETE /api/notifications/:notificationId
 router.delete('/:notificationId', async (req, res) => {
     try {
         const { notificationId } = req.params;
@@ -218,6 +190,39 @@ router.delete('/:notificationId', async (req, res) => {
         res.status(error.message.includes('not found') ? 404 : 500).json({
             success: false,
             error: error.message || 'Error deleting notification'
+        });
+    }
+});
+
+// GET /api/notifications/:userId (ruta genérica - debe ir al final)
+router.get('/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { limit = 50, skip = 0, read } = req.query;
+
+        const options = {
+            limit: parseInt(limit),
+            skip: parseInt(skip),
+            read: read === 'true' ? true : read === 'false' ? false : null
+        };
+
+        const result = await NotificationService.getNotificationsByUserId(userId, options);
+
+        res.json({
+            success: true,
+            data: result.notifications,
+            meta: {
+                total: result.total,
+                hasMore: result.hasMore,
+                limit: options.limit,
+                skip: options.skip
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Error fetching notifications'
         });
     }
 });
