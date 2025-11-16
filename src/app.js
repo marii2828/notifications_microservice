@@ -90,19 +90,21 @@ const startService = async () => {
         // 1. Conectar a MongoDB
         console.log('[1/3] Connecting to MongoDB...');
         await connectDatabase();
-        console.log('✓ MongoDB connected successfully\n');
+        // El mensaje de conexión exitosa ya se muestra en connectDatabase()
+        console.log('');
 
         // 2. Iniciar todos los consumers (NO crítico - el servicio puede continuar)
         console.log('[2/3] Starting RabbitMQ consumers...');
         try {
             await QueueManager.startAllConsumers();
-            console.log('✓ RabbitMQ consumers started successfully\n');
+            // Los mensajes de conexión exitosa ya se muestran en los módulos
+            console.log('');
         } catch (rabbitmqError) {
-            console.error('⚠ WARNING: Failed to start RabbitMQ consumers');
-            console.error('⚠ Error:', rabbitmqError.message);
-            console.error('⚠ The service will continue but notifications will NOT be processed');
-            console.error('⚠ Check RABBITMQ_URL environment variable and RabbitMQ availability');
-            console.error('⚠ In Azure, RabbitMQ is not available by default - use RabbitMQ Cloud or make service resilient\n');
+            console.error('[App] ⚠ WARNING: Failed to start RabbitMQ consumers');
+            console.error('[App] Error:', rabbitmqError.message);
+            console.error('[App] The service will continue but notifications will NOT be processed');
+            console.error('[App] Check RABBITMQ_URL environment variable and RabbitMQ availability');
+            console.error('[App] In Azure, RabbitMQ is not available by default - use RabbitMQ Cloud\n');
         }
 
         // 3. Iniciar servidor Express

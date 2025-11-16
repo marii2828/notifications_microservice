@@ -11,33 +11,34 @@ class FavoriteConsumer {
 
     async start() {
         try {
-            console.log(' [FavoriteConsumer] Iniciando consumer...');
+            console.log('[FavoriteConsumer] Starting favorite notifications consumer...');
             this.channel = await getRabbitMQChannel();
 
             await this.channel.assertQueue(this.queueName, {
                 durable: true
             });
-            console.log(` [FavoriteConsumer] Cola "${this.queueName}" verificada/creada`);
+            console.log(`[FavoriteConsumer] Queue "${this.queueName}" verified/created`);
 
             await this.channel.prefetch(1);
 
-            console.log(' [FavoriteConsumer] Favorite Consumer waiting for messages on queue:', this.queueName);
+            console.log(`[FavoriteConsumer] ✓ Consumer ready and waiting for messages on queue: "${this.queueName}"`);
 
             this.channel.consume(this.queueName, async (msg) => {
                 if (msg !== null) {
-                    console.log(' [FavoriteConsumer] Nuevo mensaje recibido de la cola');
+                    console.log('[FavoriteConsumer] 📨 New message received from queue');
                     await this.processMessage(msg);
                 } else {
-                    console.log(' [FavoriteConsumer] Mensaje null recibido');
+                    console.log('[FavoriteConsumer] Received null message');
                 }
             }, {
-                noAck: false 
+                noAck: false
             });
-            
-            console.log(' [FavoriteConsumer] Consumer iniciado y escuchando mensajes');
+
+            console.log('[FavoriteConsumer] ✓✓✓ Consumer started and listening for messages ✓✓✓');
 
         } catch (error) {
-            console.error(' Favorite Consumer failed to start:', error);
+            console.error('[FavoriteConsumer] ✗✗✗ Consumer failed to start:', error.message);
+            console.error('[FavoriteConsumer] Will retry in 5 seconds...');
             setTimeout(() => this.start(), 5000);
         }
     }
@@ -57,7 +58,7 @@ class FavoriteConsumer {
                 console.log(' [FavoriteConsumer] Favorite notification processed and acknowledged');
             } else {
                 console.warn(` [FavoriteConsumer] Unknown message type: ${message.type}`);
-                this.channel.ack(msg); 
+                this.channel.ack(msg);
             }
         } catch (error) {
             console.error(' [FavoriteConsumer] Error processing favorite notification:', error);

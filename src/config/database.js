@@ -8,20 +8,27 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://admin:1234@localhost:2
 
 const connectDatabase = async () => {
     try {
+        console.log('[MongoDB] Attempting to connect to MongoDB...');
+        const mongoUrlPreview = MONGODB_URI.replace(/:[^:@]+@/, ':****@');
+        console.log(`[MongoDB] Connection string: ${mongoUrlPreview}`);
+        
         await mongoose.connect(MONGODB_URI);
 
-        console.log(' MongoDB connected successfully');
+        console.log('[MongoDB] ✓✓✓ MongoDB CONNECTED SUCCESSFULLY ✓✓✓');
+        console.log(`[MongoDB] Database: ${mongoose.connection.name}`);
+        console.log(`[MongoDB] Host: ${mongoose.connection.host}:${mongoose.connection.port}`);
 
         mongoose.connection.on('error', (err) => {
-            console.error(' MongoDB connection error:', err);
+            console.error('[MongoDB] ✗✗✗ MongoDB connection error:', err);
         });
 
         mongoose.connection.on('disconnected', () => {
-            console.warn(' MongoDB disconnected. Attempting to reconnect...');
+            console.warn('[MongoDB] ⚠⚠⚠ MongoDB disconnected. Attempting to reconnect...');
         });
 
     } catch (error) {
-        console.error(' Failed to connect to MongoDB:', error);
+        console.error('[MongoDB] ✗✗✗ Failed to connect to MongoDB');
+        console.error('[MongoDB] Error:', error.message);
         process.exit(1);
     }
 };

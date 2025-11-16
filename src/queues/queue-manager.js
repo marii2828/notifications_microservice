@@ -10,10 +10,10 @@ class QueueManager {
             await messageConsumer.start();
             // await bookingConsumer.start();
             
-            console.log('✓ All queue consumers started');
+            console.log('[QueueManager] ✓ All queue consumers started');
         } catch (error) {
-            console.error('✗ Failed to start consumers:', error.message);
-            console.error('Stack:', error.stack);
+            console.error('[QueueManager] ✗ Failed to start consumers:', error.message);
+            console.error('[QueueManager] Stack:', error.stack);
             // NO hacer process.exit(1) - permitir que el servicio continúe
             // El servicio puede funcionar aunque no procese notificaciones
             throw error; // Re-lanzar para que app.js lo maneje
