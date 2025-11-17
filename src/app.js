@@ -17,39 +17,26 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
 
-// Variable global para io (se inicializa después)
-let io = null;
-
 // Inicializar Socket.IO
 // IMPORTANTE: Para Azure, WebSockets deben estar habilitados en App Service
 // Configuration → General settings → Web sockets: ON
-console.log('[App] Initializing Socket.IO...');
-try {
-    io = new Server(httpServer, {
-        cors: {
-            origin: process.env.FRONTEND_URL || process.env.WEBSOCKET_CORS_ORIGIN || "*",
-            methods: ["GET", "POST"],
-            credentials: true,
-            // Permitir múltiples orígenes si es necesario
-            allowedHeaders: ["*"]
-        },
-        // Configuración para Azure App Service
-        transports: ['websocket', 'polling'],
-        allowEIO3: true, // Compatibilidad con versiones anteriores
-        pingTimeout: 60000, // 60 segundos para Azure
-        pingInterval: 25000 // 25 segundos
-    });
-    console.log('[App] ✓ Socket.IO Server created successfully');
+const io = new Server(httpServer, {
+    cors: {
+        origin: process.env.FRONTEND_URL || process.env.WEBSOCKET_CORS_ORIGIN || "*",
+        methods: ["GET", "POST"],
+        credentials: true,
+        // Permitir múltiples orígenes si es necesario
+        allowedHeaders: ["*"]
+    },
+    // Configuración para Azure App Service
+    transports: ['websocket', 'polling'],
+    allowEIO3: true, // Compatibilidad con versiones anteriores
+    pingTimeout: 60000, // 60 segundos para Azure
+    pingInterval: 25000 // 25 segundos
+});
 
-    // Inicializar servicio de WebSocket
-    console.log('[App] Initializing WebSocketService...');
-    WebSocketService.initialize(io);
-    console.log('[App] ✓ WebSocketService initialized');
-} catch (wsError) {
-    console.error('[App] ✗ ERROR initializing WebSocket:', wsError.message);
-    console.error('[App] Stack:', wsError.stack);
-    // Continuar sin WebSocket si hay error
-}
+// Inicializar servicio de WebSocket
+WebSocketService.initialize(io);
 
 app.use(cors());
 app.use(express.json());
@@ -250,15 +237,13 @@ const startService = async () => {
         }
 
         // 3. Iniciar servidor HTTP (con WebSocket)
-        console.log('\n>>> STEP 3/3: Starting HTTP server with WebSocket support <<<');
-        console.log(`[App] WebSocket status: ${io ? '✓ Initialized' : '✗ NOT Initialized'}`);
-        
+        console.log('[3/3] Starting HTTP server with WebSocket support...');
         // Azure requiere escuchar en 0.0.0.0, no solo localhost
         httpServer.listen(PORT, '0.0.0.0', () => {
-            const baseUrl = process.env.WEBSITE_HOSTNAME 
-                ? `https://${process.env.WEBSITE_HOSTNAME}` 
+            const baseUrl = process.env.WEBSITE_HOSTNAME
+                ? `https://${process.env.WEBSITE_HOSTNAME}`
                 : `http://localhost:${PORT}`;
-            
+
             console.log('\n========================================');
             console.log('✓ Notification Microservice READY');
             console.log('========================================');
@@ -268,18 +253,12 @@ const startService = async () => {
             console.log(`  Health: ${baseUrl}/health`);
             console.log(`  Diagnostic: ${baseUrl}/diagnostic`);
             console.log(`  API: ${baseUrl}/api/notifications`);
-            if (io) {
-                console.log(`  WebSocket: ${baseUrl.replace('http', 'ws').replace('https', 'wss')}`);
-                console.log(`  WebSocket Status: ✓ ENABLED`);
-            } else {
-                console.log(`  WebSocket Status: ✗ DISABLED (check logs above for errors)`);
-            }
+            console.log(`  WebSocket: ${baseUrl.replace('http', 'ws').replace('https', 'wss')}`);
             if (process.env.WEBSITE_HOSTNAME) {
                 console.log(`  ⚠ IMPORTANT: Ensure WebSockets are enabled in Azure App Service`);
                 console.log(`     Configuration → General settings → Web sockets: ON`);
             }
             console.log('========================================\n');
-            console.log('>>> STEP 3/3: HTTP server started successfully\n');
         });
 
     } catch (error) {

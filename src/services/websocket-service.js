@@ -114,9 +114,9 @@ class WebSocketService {
 
     getTotalConnections() {
         let total = 0;
-gi        this.userConnections.forEach(sockets => {
+        for (const sockets of this.userConnections.values()) {
             total += sockets.size;
-        });
+        }
         return total;
     }
 }
