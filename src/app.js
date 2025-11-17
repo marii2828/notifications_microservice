@@ -1,5 +1,7 @@
 // app.js
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
@@ -7,11 +9,34 @@ import connectDatabase from './config/database.js';
 import QueueManager from './queues/queue-manager.js';
 import notificationRoutes from './routes/notifications.js';
 import { closeConnections } from './config/rabbitmq.js';
+import WebSocketService from './services/websocket-service.js';
 
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
+
+// Inicializar Socket.IO
+// IMPORTANTE: Para Azure, WebSockets deben estar habilitados en App Service
+// Configuration → General settings → Web sockets: ON
+const io = new Server(httpServer, {
+    cors: {
+        origin: process.env.FRONTEND_URL || process.env.WEBSOCKET_CORS_ORIGIN || "*",
+        methods: ["GET", "POST"],
+        credentials: true,
+        // Permitir múltiples orígenes si es necesario
+        allowedHeaders: ["*"]
+    },
+    // Configuración para Azure App Service
+    transports: ['websocket', 'polling'],
+    allowEIO3: true, // Compatibilidad con versiones anteriores
+    pingTimeout: 60000, // 60 segundos para Azure
+    pingInterval: 25000 // 25 segundos
+});
+
+// Inicializar servicio de WebSocket
+WebSocketService.initialize(io);
 
 app.use(cors());
 app.use(express.json());
@@ -156,17 +181,28 @@ const startService = async () => {
             console.error('[App] In Azure, RabbitMQ is not available by default - use RabbitMQ Cloud\n');
         }
 
-        // 3. Iniciar servidor Express
-        console.log('[3/3] Starting Express server...');
+        // 3. Iniciar servidor HTTP (con WebSocket)
+        console.log('[3/3] Starting HTTP server with WebSocket support...');
         // Azure requiere escuchar en 0.0.0.0, no solo localhost
-        app.listen(PORT, '0.0.0.0', () => {
+        httpServer.listen(PORT, '0.0.0.0', () => {
+            const baseUrl = process.env.WEBSITE_HOSTNAME
+                ? `https://${process.env.WEBSITE_HOSTNAME}`
+                : `http://localhost:${PORT}`;
+
             console.log('\n========================================');
             console.log('✓ Notification Microservice READY');
             console.log('========================================');
             console.log(`  Port: ${PORT}`);
-            console.log(`  Health: http://localhost:${PORT}/health`);
-            console.log(`  Diagnostic: http://localhost:${PORT}/diagnostic`);
-            console.log(`  API: http://localhost:${PORT}/api/notifications`);
+            console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`  Base URL: ${baseUrl}`);
+            console.log(`  Health: ${baseUrl}/health`);
+            console.log(`  Diagnostic: ${baseUrl}/diagnostic`);
+            console.log(`  API: ${baseUrl}/api/notifications`);
+            console.log(`  WebSocket: ${baseUrl.replace('http', 'ws').replace('https', 'wss')}`);
+            if (process.env.WEBSITE_HOSTNAME) {
+                console.log(`  ⚠ IMPORTANT: Ensure WebSockets are enabled in Azure App Service`);
+                console.log(`     Configuration → General settings → Web sockets: ON`);
+            }
             console.log('========================================\n');
         });
 

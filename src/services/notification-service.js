@@ -1,6 +1,7 @@
 // services/notification-service.js
 import EmailService from './email-service.js';
 import PushService from './push-service.js';
+import WebSocketService from './websocket-service.js';
 import Notification from '../models/Notification.js';
 
 class NotificationService {
@@ -98,6 +99,27 @@ class NotificationService {
         try {
             const notification = await Notification.create(notificationData);
             console.log(' Notification saved to database:', notification._id);
+            
+            // Emitir notificación vía WebSocket en tiempo real
+            try {
+                const userId = notificationData.userId;
+                if (userId) {
+                    WebSocketService.emitToUser(userId, 'new-notification', {
+                        id: notification._id,
+                        type: notification.type,
+                        title: notification.title,
+                        message: notification.message,
+                        read: notification.read,
+                        visited: notification.visited,
+                        data: notification.data,
+                        createdAt: notification.createdAt
+                    });
+                }
+            } catch (wsError) {
+                // No fallar si WebSocket falla, solo loggear
+                console.warn(' WebSocket emission failed (notification still saved):', wsError.message);
+            }
+            
             return notification;
         } catch (error) {
             console.error(' Error saving notification to database:', error);
