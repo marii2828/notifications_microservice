@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Microservicio de Notificaciones - Roomiefy
 
 Microservicio dedicado a gestionar notificaciones de la plataforma Roomiefy usando RabbitMQ como mensajería y MongoDB para persistencia.
