@@ -101,14 +101,69 @@ app.get('/diagnostic', (req, res) => {
                 ? process.env.RABBITMQ_URL.replace(/:[^:@]+@/, ':****@') // Ocultar password
                 : 'not set'
         },
+        websocket: {
+            initialized: io !== null,
+            status: io ? 'enabled' : 'disabled',
+            total_connected_users: io ? WebSocketService.getTotalConnectedUsers() : 0,
+            total_connections: io ? WebSocketService.getTotalConnections() : 0,
+            cors_origin: process.env.FRONTEND_URL || process.env.WEBSOCKET_CORS_ORIGIN || '*',
+            socket_io_version: io ? '4.7.2' : 'not loaded'
+        },
         variables: {
             mongodb_uri_set: !!process.env.MONGODB_URI,
             rabbitmq_url_set: !!process.env.RABBITMQ_URL,
-            port_set: !!process.env.PORT
+            port_set: !!process.env.PORT,
+            frontend_url_set: !!process.env.FRONTEND_URL,
+            website_hostname: process.env.WEBSITE_HOSTNAME || 'not set'
         }
     };
 
     res.json(diagnostics);
+});
+
+// Endpoint específico para verificar estado de WebSocket
+app.get('/websocket/status', (req, res) => {
+    const baseUrl = process.env.WEBSITE_HOSTNAME 
+        ? `https://${process.env.WEBSITE_HOSTNAME}` 
+        : `http://localhost:${process.env.PORT || 3001}`;
+    
+    const wsUrl = baseUrl.replace('http', 'ws').replace('https', 'wss');
+    
+    const status = {
+        websocket: {
+            initialized: io !== null,
+            status: io ? 'enabled' : 'disabled',
+            url: wsUrl,
+            http_url: baseUrl
+        },
+        connections: {
+            total_users: io ? WebSocketService.getTotalConnectedUsers() : 0,
+            total_connections: io ? WebSocketService.getTotalConnections() : 0
+        },
+        configuration: {
+            cors_origin: process.env.FRONTEND_URL || process.env.WEBSOCKET_CORS_ORIGIN || '*',
+            ping_timeout: 60000,
+            ping_interval: 25000,
+            transports: ['websocket', 'polling']
+        },
+        azure: {
+            website_hostname: process.env.WEBSITE_HOSTNAME || 'not set',
+            websockets_enabled: 'Check Azure Portal → Configuration → General settings → Web sockets: ON'
+        },
+        timestamp: new Date().toISOString()
+    };
+
+    if (!io) {
+        status.error = 'WebSocket not initialized. Check server logs for errors.';
+        status.troubleshooting = [
+            '1. Verify socket.io is installed: npm list socket.io',
+            '2. Check server logs for initialization errors',
+            '3. Ensure WebSockets are enabled in Azure Portal',
+            '4. Verify package.json includes socket.io dependency'
+        ];
+    }
+
+    res.json(status);
 });
 
 // API Routes
