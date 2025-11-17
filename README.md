@@ -23,7 +23,7 @@ El microservicio actúa como consumidor de mensajes de RabbitMQ, procesa las not
 
 ## Instalación
 
-1. **Clonar el repositorio** (si aplica) o navegar al directorio:
+1. **Clonar el repositorio** o navegar al directorio:
 ```bash
 cd notifications-microservice
 ```
@@ -50,9 +50,6 @@ RABBITMQ_URL=amqp://admin:1234@localhost:5672
 # Frontend/WebSocket
 FRONTEND_URL=http://localhost:5173
 WEBSOCKET_CORS_ORIGIN=http://localhost:5173
-
-# Azure (solo para producción)
-WEBSITE_HOSTNAME=your-app-name.azurewebsites.net
 ```
 
 ## Desarrollo Local con Docker
